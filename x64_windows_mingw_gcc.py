@@ -1,17 +1,16 @@
 
 from toolchains import Toolchain
 
-# Need apt packages:
-#   gcc-mingw-w64-x86-64
-#   g++-mingw-w64-x86-64
+# gcc-mingw-w64-x86-64
+# g++-mingw-w64-x86-64
 #
 Toolchain(
     id='x64-windows-mingw-gcc',
-    target_os='x64-windows',
-    compiler='mingw-gcc',
+    tags=['x64-windows','mingw','gcc'],
     prefix='x86_64-w64-mingw32-',
-    CC='gcc',
-    CXX='g++',
-    LINK='g++',
-    CCFLAGS=['-g'],
+    env={
+        'CC':'gcc',
+        'CXX':'g++',
+        'LINK':'g++',
+    },
 )

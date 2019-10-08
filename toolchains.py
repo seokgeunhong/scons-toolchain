@@ -1,111 +1,116 @@
 
-import os
-from itertools import product
-
 
 registry = {}
 
 
-class ArgMissingError(Exception):
-    def __init__(self, **args):
-        super(Exception, self).__init__('`%s` is missing.' % ' '.join(args.keys()))
-
-class ArgNotFoundError(Exception):
+class NotFoundError(Exception):
     def __init__(self, **args):
         super(Exception, self).__init__('''`%s` not supported.
 
 Supported toolchains are:
-  %s''' %
-            (' '.join('%s=%s' % a for a in args.items()),
-             '\n  '.join(sorted(t.id for t in set(registry.values()))))
-        )
+  %s''' % (
+            ' '.join('%s=%s' % a for a in args.items()),
+            '\n  '.join(sorted(str(t) for t in set(registry.values()))))
+          )
+
+
+def find(*toolchains, **args):
+
+    keys = []
+
+    for k in toolchains:
+        keys += k.split('+') if isinstance(k,str) else k
+
+    k = args.get('toolchain', tuple())
+    keys += k.split('+') if isinstance(k,str) else k
+
+    try:
+        return registry[tuple(keys)]
+    except KeyError:
+        pass
+
+    try:
+        t = registry[tuple(keys[:1])]
+    except KeyError:
+        raise NotFoundError(toolchain=keys[:1])
+
+    id = list(t._id)
+    tags = set(t._tags)
+    prefix = t._prefix
+    env = t._env.copy()
+
+    for k in keys[1:]:
+        try:
+            t = registry[(k,)]
+        except KeyError:
+            raise NotFoundError(toolchain=(k,))
+
+        id += t._id
+        tags |= set(t._tags)  # union
+        prefix = t._prefix if t._prefix else prefix  # replace
+
+        for k, v in t._env.items():
+            a = env.get(k, [])
+            b = t._env.get(k, [])
+            a = {a} if isinstance(a, str) else set(a)
+            b = {b} if isinstance(b, str) else set(b)
+            env[k] = list(a|b)
+
+    return Toolchain(id,tags=list(tags),prefix=prefix,env=env)
 
 
 class Toolchain:
 
-    def __init__(self, id, target_os, compiler,
-                 alt_id = [], alt_target_os = [], alt_compiler = [],
-                 prefix = '',
-                 **env):
+    def __init__(self,
+                 id,
+                 tags=[],
+                 prefix='',
+                 env={}):
 
         if not id:
-            raise TypeError('Toolchain() takes `%s` as mandatory.' % 'id')
-        if not target_os:
-            raise TypeError('Toolchain() takes `%s` as mandatory.' % 'target_os')
-        if not compiler:
-            raise TypeError('Toolchain() takes `%s` as mandatory.' % 'compiler')
+            raise TypeError('Toolchain() parameter `id` is mandatory.')
 
-        self._id = (id,)+tuple(alt_id)
-        self._target_os = (target_os,)+tuple(alt_target_os)
-        self._compiler = (compiler,)+tuple(alt_compiler)
-        self.prefix = prefix
-        self._env = env
+        self._id = (id,) if isinstance(id, str) else tuple(id)
+        self._tags = (tags,) if isinstance(tags, str) else tuple(tags)
+        self._prefix = str(prefix)
+        self._env = env.copy()
 
-        # Check duplication
-        for k in self._id+tuple(product(self._target_os, self._compiler)):
-            if registry.get(k, None):
-                raise ValueError('Toolchain() key `%s` duplicated.' % str(k))
-            else:
-                registry[k] = self
-
+        if registry.get(self._id, None):
+            raise ValueError('Toolchain() id `%s` duplicated.' % str(self._id))
+        else:
+            registry[self._id] = self
 
     def __str__(self):
-        return self._id[0]
+        return '+'.join(self._id)
 
     def log(self):
         return (
-            'toolchain=%s' % self._id,
-            'target-os=%s' % self._target_os,
-            'compiler=%s' % self._compiler,
-            'prefix=%s' % self.prefix,
-            'env=%s' % self._env,
+            'id=%s' % str(self),
+            'tags=%s' % str(self.tags),
+            'prefix="%s"' % str(self.prefix),
+            'env=%s' % str(self.env()),
         )
 
     @property
     def id(self):
-        return self._id[0]
+        return self._id
 
-    # @property
-    # def target_os(self):
-    #     return self._target_os[0]
+    @property
+    def tags(self):
+        return list(self._tags)
 
-    # @property
-    # def compiler(self):
-    #     return self._compiler[0]
+    @property
+    def prefix(self):
+        return self._prefix
 
-    def envargs(self):
-        return {
-            'ENV': os.environ,
-            'CC': self.prefix+self._env.get('CC', ''),
-            'CXX': self.prefix+self._env.get('CXX', ''),
-            'LINK': self.prefix+self._env.get('LINK', ''),
-            'CPPPATH': self._env.get('CPPPATH', ''),
-            'CCFLAGS': self._env.get('CCFLAGS', ''),
-            'LINKFLAGS': self._env.get('LINKFLAGS', ''),
-        }
-
-    @staticmethod
-    def from_args(**args):
-        id = args.get('toolchain', '')
-        if id:
-            toolchain = registry.get(id, None)
-            if toolchain:
-                return toolchain
-            else:
-                raise ArgNotFoundError(toolchain=id)
-        
-        target_os = args.get('target-os', '')
-        compiler = args.get('compiler', '')
-        if target_os and compiler:
-            toolchain = registry.get((target_os,compiler), None)
-            if toolchain:
-                return toolchain
-            else:
-                raise ArgNotFoundError(target_os=target_os, compiler=compiler)
-
-        if target_os:
-            raise ArgMissingError(compiler='')
-        elif compiler:
-            raise ArgMissingError(target_os='')
+    def env(self, key=None):
+        if key is None:
+            return { k : self._prefix_val(k,v) for k, v in self._env.items() }
         else:
-            raise ArgMissingError(toolchain='')
+            return self._prefix_val(key, self._env.get(key, None))
+
+    def _prefix_val(self, key, val):
+        if key in {'CC', 'CXX', 'LINK'}:
+            return str(self._prefix) + str(val) if val else ''
+        else:
+            return val

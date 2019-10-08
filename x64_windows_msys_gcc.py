@@ -4,11 +4,9 @@ from toolchains import Toolchain
 
 Toolchain(
     id='x64-windows-msys-gcc',
-    target_os='x64-windows-msys',
-    compiler='gcc',
+    tags=['x64-windows','msys-gcc','gcc'],
     prefix='x86_64-pc-msys-',
     CC='gcc',
     CXX='g++',
     LINK='g++',
-    CCFLAGS=['-g'],
 )
