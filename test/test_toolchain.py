@@ -35,7 +35,8 @@ class TestToolchain(unittest.TestCase):
     def test_find_single_1(self):
         toolchain = toolchains.find('x64-linux-gcc-7')
         self.assertTrue(toolchain)
-        self.assertEqual(toolchain.id, 'x64-linux-gcc-7')
+        self.assertEqual(toolchain.id, ['x64-linux-gcc-7'])
+        self.assertEqual(str(toolchain), 'x64-linux-gcc-7')
         self.assertEqual(set(toolchain.tags), {'x64-linux','gcc-7','gcc'})
         self.assertEqual(toolchain.prefix, 'x86_64-linux-gnu-')
         self.assertEqual(toolchain.env('CC'), 'x86_64-linux-gnu-gcc-7')
@@ -44,7 +45,8 @@ class TestToolchain(unittest.TestCase):
     def test_find_single_2(self):
         toolchain = toolchains.find(['x64-linux-gcc-7'])
         self.assertTrue(toolchain)
-        self.assertEqual(toolchain.id, 'x64-linux-gcc-7')
+        self.assertEqual(toolchain.id, ['x64-linux-gcc-7'])
+        self.assertEqual(str(toolchain), 'x64-linux-gcc-7')
         self.assertEqual(set(toolchain.tags), {'x64-linux','gcc-7','gcc'})
         self.assertEqual(toolchain.prefix, 'x86_64-linux-gnu-')
         self.assertEqual(toolchain.env('CC'), 'x86_64-linux-gnu-gcc-7')
@@ -53,7 +55,8 @@ class TestToolchain(unittest.TestCase):
     def test_find_single_3(self):
         toolchain = toolchains.find(toolchain='x64-linux-gcc-7')
         self.assertTrue(toolchain)
-        self.assertEqual(toolchain.id, 'x64-linux-gcc-7')
+        self.assertEqual(toolchain.id, ['x64-linux-gcc-7'])
+        self.assertEqual(str(toolchain), 'x64-linux-gcc-7')
         self.assertEqual(set(toolchain.tags), {'x64-linux','gcc-7','gcc'})
         self.assertEqual(toolchain.prefix, 'x86_64-linux-gnu-')
         self.assertEqual(toolchain.env('CC'), 'x86_64-linux-gnu-gcc-7')
@@ -62,7 +65,8 @@ class TestToolchain(unittest.TestCase):
     def test_find_single_4(self):
         toolchain = toolchains.find(toolchain=['x64-linux-gcc-7'])
         self.assertTrue(toolchain)
-        self.assertEqual(toolchain.id, 'x64-linux-gcc-7')
+        self.assertEqual(toolchain.id, ['x64-linux-gcc-7'])
+        self.assertEqual(str(toolchain), 'x64-linux-gcc-7')
         self.assertEqual(set(toolchain.tags), {'x64-linux','gcc-7','gcc'})
         self.assertEqual(toolchain.prefix, 'x86_64-linux-gnu-')
         self.assertEqual(toolchain.env('CC'), 'x86_64-linux-gnu-gcc-7')
@@ -71,7 +75,8 @@ class TestToolchain(unittest.TestCase):
     def test_find_double_1(self):
         toolchain = toolchains.find('x64-linux-gcc-7+gcc-debug')
         self.assertTrue(toolchain)
-        self.assertEqual(toolchain.id, 'x64-linux-gcc-7+gcc-debug')
+        self.assertEqual(toolchain.id, ['x64-linux-gcc-7','gcc-debug'])
+        self.assertEqual(str(toolchain), 'x64-linux-gcc-7+gcc-debug')
         self.assertEqual(set(toolchain.tags), {'x64-linux','gcc-7','gcc','debug'})
         self.assertEqual(toolchain.prefix, 'x86_64-linux-gnu-')
         self.assertEqual(toolchain.env('CC'), 'x86_64-linux-gnu-gcc-7')
@@ -80,7 +85,8 @@ class TestToolchain(unittest.TestCase):
     def test_find_double_2(self):
         toolchain = toolchains.find(['x64-linux-gcc-7','gcc-debug'])
         self.assertTrue(toolchain)
-        self.assertEqual(toolchain.id, 'x64-linux-gcc-7+gcc-debug')
+        self.assertEqual(toolchain.id, ['x64-linux-gcc-7','gcc-debug'])
+        self.assertEqual(str(toolchain), 'x64-linux-gcc-7+gcc-debug')
         self.assertEqual(set(toolchain.tags), {'x64-linux','gcc-7','gcc','debug'})
         self.assertEqual(toolchain.prefix, 'x86_64-linux-gnu-')
         self.assertEqual(toolchain.env('CC'), 'x86_64-linux-gnu-gcc-7')
@@ -89,7 +95,8 @@ class TestToolchain(unittest.TestCase):
     def test_find_double_3(self):
         toolchain = toolchains.find(toolchain='x64-linux-gcc-7+gcc-debug')
         self.assertTrue(toolchain)
-        self.assertEqual(toolchain.id, 'x64-linux-gcc-7+gcc-debug')
+        self.assertEqual(toolchain.id, ['x64-linux-gcc-7','gcc-debug'])
+        self.assertEqual(str(toolchain), 'x64-linux-gcc-7+gcc-debug')
         self.assertEqual(set(toolchain.tags), {'x64-linux','gcc-7','gcc','debug'})
         self.assertEqual(toolchain.prefix, 'x86_64-linux-gnu-')
         self.assertEqual(toolchain.env('CC'), 'x86_64-linux-gnu-gcc-7')
@@ -98,7 +105,8 @@ class TestToolchain(unittest.TestCase):
     def test_find_double_4(self):
         toolchain = toolchains.find(toolchain=['x64-linux-gcc-7','gcc-debug'])
         self.assertTrue(toolchain)
-        self.assertEqual(toolchain.id, 'x64-linux-gcc-7+gcc-debug')
+        self.assertEqual(toolchain.id, ['x64-linux-gcc-7','gcc-debug'])
+        self.assertEqual(str(toolchain), 'x64-linux-gcc-7+gcc-debug')
         self.assertEqual(set(toolchain.tags), {'x64-linux','gcc-7','gcc','debug'})
         self.assertEqual(toolchain.prefix, 'x86_64-linux-gnu-')
         self.assertEqual(toolchain.env('CC'), 'x86_64-linux-gnu-gcc-7')
@@ -107,7 +115,8 @@ class TestToolchain(unittest.TestCase):
     def test_find_triple_1(self):
         toolchain = toolchains.find('x64-linux-gcc-7+gcc-debug+gcc-warning-max')
         self.assertTrue(toolchain)
-        self.assertEqual(toolchain.id, 'x64-linux-gcc-7+gcc-debug+gcc-warning-max')
+        self.assertEqual(toolchain.id, ['x64-linux-gcc-7','gcc-debug','gcc-warning-max'])
+        self.assertEqual(str(toolchain), 'x64-linux-gcc-7+gcc-debug+gcc-warning-max')
         self.assertEqual(set(toolchain.tags), {'x64-linux','gcc-7','gcc','debug','warning-max'})
         self.assertEqual(toolchain.prefix, 'x86_64-linux-gnu-')
         self.assertEqual(toolchain.env('CC'), 'x86_64-linux-gnu-gcc-7')
@@ -116,7 +125,8 @@ class TestToolchain(unittest.TestCase):
     def test_find_triple_2(self):
         toolchain = toolchains.find(['x64-linux-gcc-7','gcc-debug','gcc-warning-max'])
         self.assertTrue(toolchain)
-        self.assertEqual(toolchain.id, 'x64-linux-gcc-7+gcc-debug+gcc-warning-max')
+        self.assertEqual(toolchain.id, ['x64-linux-gcc-7','gcc-debug','gcc-warning-max'])
+        self.assertEqual(str(toolchain), 'x64-linux-gcc-7+gcc-debug+gcc-warning-max')
         self.assertEqual(set(toolchain.tags), {'x64-linux','gcc-7','gcc','debug','warning-max'})
         self.assertEqual(toolchain.prefix, 'x86_64-linux-gnu-')
         self.assertEqual(toolchain.env('CC'), 'x86_64-linux-gnu-gcc-7')
@@ -125,7 +135,8 @@ class TestToolchain(unittest.TestCase):
     def test_find_triple_3(self):
         toolchain = toolchains.find(toolchain='x64-linux-gcc-7+gcc-debug+gcc-warning-max')
         self.assertTrue(toolchain)
-        self.assertEqual(toolchain.id, 'x64-linux-gcc-7+gcc-debug+gcc-warning-max')
+        self.assertEqual(toolchain.id, ['x64-linux-gcc-7','gcc-debug','gcc-warning-max'])
+        self.assertEqual(str(toolchain), 'x64-linux-gcc-7+gcc-debug+gcc-warning-max')
         self.assertEqual(set(toolchain.tags), {'x64-linux','gcc-7','gcc','debug','warning-max'})
         self.assertEqual(toolchain.prefix, 'x86_64-linux-gnu-')
         self.assertEqual(toolchain.env('CC'), 'x86_64-linux-gnu-gcc-7')
@@ -134,7 +145,8 @@ class TestToolchain(unittest.TestCase):
     def test_find_triple_4(self):
         toolchain = toolchains.find(toolchain=['x64-linux-gcc-7','gcc-debug','gcc-warning-max'])
         self.assertTrue(toolchain)
-        self.assertEqual(toolchain.id, 'x64-linux-gcc-7+gcc-debug+gcc-warning-max')
+        self.assertEqual(toolchain.id, ['x64-linux-gcc-7','gcc-debug','gcc-warning-max'])
+        self.assertEqual(str(toolchain), 'x64-linux-gcc-7+gcc-debug+gcc-warning-max')
         self.assertEqual(set(toolchain.tags), {'x64-linux','gcc-7','gcc','debug','warning-max'})
         self.assertEqual(toolchain.prefix, 'x86_64-linux-gnu-')
         self.assertEqual(toolchain.env('CC'), 'x86_64-linux-gnu-gcc-7')

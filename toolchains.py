@@ -21,25 +21,24 @@ def find(*toolchains, **args):
     for k in toolchains:
         keys += k.split('+') if isinstance(k,str) else k
 
-    k = args.get('toolchain', tuple())
-    keys += k.split('+') if isinstance(k,str) else k
+    try:
+        k = args['toolchain']
+    except KeyError:
+        pass
+    else:
+        keys += k.split('+') if isinstance(k,str) else k
 
     try:
         return registry[tuple(keys)]
     except KeyError:
         pass
 
-    try:
-        t = registry[tuple(keys[:1])]
-    except KeyError:
-        raise NotFoundError(toolchain=keys[:1])
+    id = []
+    tags = set()
+    prefix = None
+    env = {}
 
-    id = list(t._id)
-    tags = set(t._tags)
-    prefix = t._prefix
-    env = t._env.copy()
-
-    for k in keys[1:]:
+    for k in keys:
         try:
             t = registry[(k,)]
         except KeyError:
@@ -47,11 +46,11 @@ def find(*toolchains, **args):
 
         id += t._id
         tags |= set(t._tags)  # union
-        prefix = t._prefix if t._prefix else prefix  # replace
+        prefix = prefix if prefix else t._prefix  # replace only if none
 
         for k, v in t._env.items():
-            a = env.get(k, [])
-            b = t._env.get(k, [])
+            a = env.get(k, set())
+            b = t._env.get(k, set())
             a = {a} if isinstance(a, str) else set(a)
             b = {b} if isinstance(b, str) else set(b)
             env[k] = list(a|b)
@@ -72,7 +71,7 @@ class Toolchain:
 
         self._id = (id,) if isinstance(id, str) else tuple(id)
         self._tags = (tags,) if isinstance(tags, str) else tuple(tags)
-        self._prefix = str(prefix)
+        self._prefix = prefix
         self._env = env.copy()
 
         if registry.get(self._id, None):
@@ -93,7 +92,7 @@ class Toolchain:
 
     @property
     def id(self):
-        return self._id
+        return list(self._id)
 
     @property
     def tags(self):
@@ -101,7 +100,7 @@ class Toolchain:
 
     @property
     def prefix(self):
-        return self._prefix
+        return str(self._prefix)
 
     def env(self, key=None):
         if key is None:
@@ -111,6 +110,7 @@ class Toolchain:
 
     def _prefix_val(self, key, val):
         if key in {'CC', 'CXX', 'LINK'}:
-            return str(self._prefix) + str(val) if val else ''
+            v = val if isinstance(val,str) else '-'.join(val) 
+            return str(self._prefix) + v if v else ''
         else:
             return val
