@@ -9,17 +9,44 @@ Toolchain(
 )
 
 Toolchain(
-    'gcc-warning-4',
-    tags=['gcc','warning-4'],
+    'gcc-warnings',
+    tags=['gcc','warning'],
     env = {
         'CFLAGS':[
-            '-W','-Wall','-Wextra','-pedantic',
-            '-Wconversion','-Wsign-conversion','-Wshadow',
-            '-Wlogical-op','-Wjump-misses-init','-Wmissing-include-dirs',
-            '-Wcast-qual',
-            '-Wbad-function-cast','-Wwrite-strings','-Wpacked',
-            '-Wredundant-decls','-Wpointer-arith','-Wfloat-equal',
+            '-Wjump-misses-init',
             '-Wnested-externs',
-        ]
+            '-Wbad-function-cast',
+        ],
+        'CCFLAGS':[
+            '-W','-Wall','-Wextra','-pedantic',
+            '-Wconversion','-Wsign-conversion',
+            '-Wwrite-strings',
+            '-Wpacked',
+            '-Wpointer-arith',
+            #'-Wfloat-equal',
+            '-Wcast-align',
+            '-Wdisabled-optimization',
+            '-Wformat=2',
+            '-Winit-self',
+            '-Wlogical-op',
+            '-Wmissing-include-dirs',
+            '-Wredundant-decls',
+            '-Wshadow',
+            '-Wstrict-overflow=5',
+            # '-Wno-unused',
+            # '-Wno-variadic-macros',
+            # '-Wno-parentheses',
+            '-fdiagnostics-show-option', 
+        ],
+        'CXXFLAGS':[
+            '-Wnoexcept',
+            '-Wcast-qual',
+            '-Wold-style-cast',
+            '-Wstrict-null-sentinel',
+            '-Woverloaded-virtual',
+            '-Wsign-promo',
+            #'-Wundef',
+            #'-Wctor-dtor-privacy',  # GoogleTest
+        ],
     }
 )
