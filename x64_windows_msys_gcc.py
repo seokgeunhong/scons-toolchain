@@ -3,10 +3,11 @@ from toolchains import Toolchain
 
 
 Toolchain(
-    id='x64-windows-msys-gcc',
-    tags=['x64-windows','msys-gcc','gcc'],
+    'x64-windows-msys-gcc',
     prefix='x86_64-pc-msys-',
-    CC='gcc',
-    CXX='g++',
-    LINK='g++',
+    env={
+        'CC':'gcc',
+        'CXX':'g++',
+        'LINK':'g++',
+    },
 )

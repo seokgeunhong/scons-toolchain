@@ -1,3 +1,7 @@
+
 # Intermediate files
 *.pyc
+__pycache__
+
+# Local settings
 .vscode/settings.json

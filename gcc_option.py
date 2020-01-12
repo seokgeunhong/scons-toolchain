@@ -4,13 +4,11 @@ from toolchains import Toolchain
 
 Toolchain(
     'gcc-debug',
-    tags=['gcc','debug'],
     env = {'CCFLAGS':'-g'}
 )
 
 Toolchain(
     'gcc-warnings',
-    tags=['gcc','warning'],
     env = {
         'CFLAGS':[
             '-Wjump-misses-init',

@@ -1,15 +1,13 @@
 
 from toolchains import Toolchain
 
-# gcc-mingw-w64-x86-64
-# g++-mingw-w64-x86-64
-#
+
 Toolchain(
-    id='x64-windows-mingw-gcc',
-    prefix='x86_64-w64-mingw32-',
+    'x64-linux-gcc',
+    prefix='x86_64-linux-gnu-',
     env={
         'CC':'gcc',
         'CXX':'g++',
         'LINK':'g++',
-    },
+    }
 )
