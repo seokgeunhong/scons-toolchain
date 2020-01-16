@@ -1,7 +1,28 @@
-# Not ready
 
 from toolchains import Toolchain
 
+
+Toolchain(
+    'x64-windows-mingw-clang',
+    env={
+        'CC':'clang',
+        'CXX':'clang++',
+        'LINK':'clang++',
+        'CCFLAGS':[
+            '--target=x86_64-w64-mingw32',
+            '-fno-exceptions',
+            '-fstandalone-debug',
+            '--debug',
+        ],
+        'CXXFLAGS':[
+            '-std=c++17',
+        ],
+        'LINKFLAGS':[
+            '--target=x86_64-w64-mingw32',
+            '--debug',
+        ],
+    },
+)
 
 Toolchain(
     'x64-windows-mingw-clang-8',

@@ -26,19 +26,19 @@ class TestToolchain(unittest.TestCase):
         )
 
     single = {
-        'id':['gcc'],
+        'id':('gcc',),
         'str':'gcc',
         'prefix':'gnu-',
         'env':{'CC':'gnu-g++-7','CCFLAGS':None},
     }
     double = {
-        'id':['gcc','debug'],
+        'id':('gcc','debug'),
         'str':'gcc+debug',
         'prefix':'gnu-',
         'env':{'CC':'gnu-g++-7','CCFLAGS':{'-g'}},
     }
     triple = {
-        'id':['gcc','debug','warning'],
+        'id':('gcc','debug','warning'),
         'str':'gcc+debug+warning',
         'prefix':'gnu-',
         'env':{'CC':'gnu-g++-7','CCFLAGS':{'-g','-pedantic'}},

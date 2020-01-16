@@ -5,7 +5,7 @@ registry = {}
 
 
 class WrongKeyError(Exception):
-    '''Given key is not valid
+    '''Given key is not valid:
 
       - Id list is empty. i.e. None, '', or []
       - One or more id are empty. e.g. ['a','','c'], or 'a+b+'
@@ -64,21 +64,28 @@ def _key(*toolchains, **args):
 def find(*toolchains, **args):
     '''Find a toolchain with given arguments
 
-      toolchain     A single id or id list.
-      *toolchains   Single ids and/or id lists.
+      toolchain=    A single string or an iterable.
+      *toolchains   Single strings and/or iterables.
 
-    Each id list is either a single string, a list of strings and/or id lists.
-    And each string contains a single id or multiple ids separated with `+`.
-    The key is a tuple of the ids.
+    Each string is a single id or multiple ids separated with `+`:
 
-      - A string with single id. 'x64-linux-gcc'
-      - A string with multiple ids: 'x64-linux-gcc+gcc-debug+gcc-warning'
-      - A list of strings: ['x64-linux-gcc','gcc-debug+gcc-warning']
-      - A list of combination: ['x64-linux-gcc',['gcc-debug','gcc-warning']]
+      find('x64-linux-gcc')  # Key is ('x64-linux-gcc',)
+      find('x64-linux-gcc+gcc-debug')  # Key is ('x64-linux-gcc','gcc-debug')
 
-      return  Toolchain of given id list if one is found in registry.
+    Each iterable yields another strings or iterables:
+
+      find('x64-linux-gcc','gcc-debug','gcc-warnings')
+      find(['x64-linux-gcc','gcc-debug','gcc-warnings'])
+      find('x64-linux-gcc',['gcc-debug','gcc-warnings'])
+      find(toolchain=['x64-linux-gcc','gcc-debug+gcc-warnings'])
+      # All yield the same key: ('x64-linux-gcc','gcc-debug','gcc-warnings')
+
+    Each string is split with '+' into strings, nested iterables are flatten,
+    and all iterables are combined into a single tuple, or a _key_.
+
+      return  Toolchain of _key_ if one is found in registry.
               If none found, define one by combining existing toolchains
-              of each ids in the id list.
+              of each ids.
       raise   NotFoundError   If any of id is not found in registry.
               WrongKeyError   If any of id is in wrong format.
     '''
@@ -118,9 +125,9 @@ class Toolchain:
 
     def __init__(self, id, prefix='', env={}):
         '''
-          id        A single id or id list. For details, see find().
-          prefix    Binary prefix.
-          env       Environment variables.
+          id        A single string or an iterable. For details, see find().
+          prefix    A string.
+          env       Dictionary of environment variables.
 
           raise   WrongKeyError If any of id is in wrong format.
                   DupKeyError   If id exists found.
@@ -154,11 +161,11 @@ class Toolchain:
 
     @property
     def id(self):
-        '''Id list
+        '''Immutable iterable of ids
 
-        e.g. ['x64_linux_gcc','gcc_debug']
+        e.g. ('x64_linux_gcc','gcc_debug')
         '''
-        return list(self._id)
+        return self._id
 
     @property
     def prefix(self):
