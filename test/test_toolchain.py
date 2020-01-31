@@ -14,15 +14,15 @@ class TestToolchain(unittest.TestCase):
         toolchains.Toolchain(
             'gcc',
             prefix='gnu-',
-            env={'CC':'g++-7',}
+            CC='g++-7',
         )
         toolchains.Toolchain(
             'debug',
-            env = {'CCFLAGS':'-g'}
+            CCFLAGS='-g',
         )
         toolchains.Toolchain(
             'warning',
-            env = {'CCFLAGS':'-pedantic'}
+            CCFLAGS='-pedantic',
         )
 
     single = {
