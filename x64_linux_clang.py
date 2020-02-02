@@ -1,9 +1,8 @@
-
+# x86_64, linux, clang
 from toolchains import Toolchain
 
 
-Toolchain(
-    'x64-linux-clang',
+Toolchain('x64-linux-clang',
     CC='clang',
     CXX='clang++',
     LINK='clang++',
@@ -22,8 +21,7 @@ Toolchain(
     ],
 )
 
-Toolchain(
-    'x64-linux-clang-8',
+Toolchain('x64-linux-clang-8',
     CC='clang-8',
     CXX='clang++-8',
     LINK='clang++-8',

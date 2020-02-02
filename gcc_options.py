@@ -1,14 +1,15 @@
 # gcc options
+from toolchains import Option
 
-from toolchains import Toolchain
 
-Toolchain(
-    'gcc-debug',
+# Enable debug option
+Option('gcc-debug',
     CCFLAGS='-g',
 )
 
-Toolchain(
-    'gcc-warnings',
+# Turn on warnings
+Option(
+    'gcc-warning',
     CFLAGS=[
         '-Wjump-misses-init',
         '-Wnested-externs',

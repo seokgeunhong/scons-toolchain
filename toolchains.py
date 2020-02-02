@@ -8,207 +8,210 @@ registry = {}
 
 
 class WrongKeyError(Exception):
-    '''Given key is not valid:
-
-      - Id list is empty. i.e. None, '', or []
-      - One or more id are empty. e.g. ['a','','c'], or 'a+b+'
-    '''
+    '''Given key is not valid'''
 
     def __init__(self, key):
-        super(Exception, self).__init__(
-            'Wrong toolchain id: `{:s}`'.format('+'.join(key)))
+        self.key = key
+        super(Exception, self).__init__('Wrong key: {}'.format(key))
 
 class NotFoundError(Exception):
-    '''Faild to find a toolchain with given key'''
+    '''Faild to find a Toolchain or an Option with given key'''
 
     def __init__(self, key):
         super(Exception, self).__init__(
-'''Not supported toolchain: `{:s}`
+'''Not supported toolchain: {}
 
 Supported toolchains are:
-  {:s}'''.format(
-            '+'.join(key),
-            '\n  '.join(sorted(str(t) for t in set(registry.values())))))
+  {}'''.format(
+            key,
+            '\n  '.join(sorted(str(t) for t in registry.values()))))
 
 class DupKeyError(Exception):
     '''Toolchain already exists'''
 
     def __init__(self, key):
         super(Exception, self).__init__(
-'''Duplicated toolchain id: `{:s}`'''.format(
-            '+'.join(key)))
+            'Duplicated toolchain key: `{}`'.format(key))
 
 
-def keyfromargs(*toolchains, **args):
-    '''Get a new key, i.e. id list, with given arguments
+def toolchain(*keys, **args):
+    '''Find a toolchain with given arguments or register one if not exists.
 
-    For argument details, see toolchain().
+      toolchain=<keys>  Strings or nested iterables of strings, which is
+      *<keys>           a toolchain key followed optional option names.
+                        Either toolchain=<keys> or *<keys> may be used.
 
-      return  Id list.
-      raise   WrongKeyError If any of id elements are in wrong format.
-    '''
+      verbose=<bool>    If True, print progress information.
 
-    key = []
+    Each string is a key or keys separated with `+`:
 
-    try:
-        t = args['toolchain']  # toolchain=<key>
-    except KeyError:
-        pass
-    else:
-        key += keyfromargs(t)
-
-    for t in toolchains:
-        key += t.split('+') if isinstance(t, str) else keyfromargs(*t)
-
-    if not key or [k for k in key if not k]:
-        raise WrongKeyError(tuple(key))
-
-    return tuple(key)
-
-
-def toolchain(*toolchains, **args):
-    '''Find a toolchain with given arguments or create one if not exists.
-
-      toolchain=    A single string or an iterable.
-      *toolchains   Single strings and/or iterables.
-
-    Each string is a single id or multiple ids separated with `+`:
-
-      toolchain('x64-linux-gcc')  # Key is ('x64-linux-gcc',)
-      toolchain('x64-linux-gcc+gcc-debug')  # Key is ('x64-linux-gcc','gcc-debug')
+      toolchain('gcc')        # Toolchain `gcc`
+      toolchain('gcc+debug')  # Toolchain `gcc` with Option `debug`
 
     Each iterable yields another strings or iterables:
 
-      toolchain('x64-linux-gcc','gcc-debug','gcc-warnings')
-      toolchain(['x64-linux-gcc','gcc-debug','gcc-warnings'])
-      toolchain('x64-linux-gcc',['gcc-debug','gcc-warnings'])
-      toolchain(toolchain=['x64-linux-gcc','gcc-debug+gcc-warnings'])
-      # All yield the same key: ('x64-linux-gcc','gcc-debug','gcc-warnings')
+      # All yield: Toolchain `gcc` with Option `debug` and `warning`
+      toolchain('gcc','debug','warning')
+      toolchain(['gcc','debug','warning'])
+      toolchain('gcc',['debug','warning'])
+      toolchain(toolchain=['gcc','debug+warning'])
 
-    Each string is split with '+' into strings, nested iterables are flatten,
-    and all iterables are combined into a single tuple, or a _key_.
-
-      return  Toolchain of _key_ if one is found in registry.
-              If none found, define one by combining existing toolchains
-              of each ids.
-      raise   NotFoundError   If any of id is not found in registry.
-              WrongKeyError   If any of id is in wrong format.
+      return  Toolchain found, or define one if none found.
+      raise   NotFoundError   If any element is not found in the registry.
+              WrongKeyError   If arguments are wrong.
     '''
-    verbose = args.get('verbose', False)
+    verbose = args.pop('verbose', False)
 
     if verbose:
-        print 'toolchain: Finding... {}{}'.format(
-            ', '.join(toolchains),
-            ', '.join(['='.join(a) for a in args.items()]))
+        print 'toolchain: Finding ({}{})'.format(
+            ','.join((str(t) for t in keys)),
+            ','.join(['='.join(a) for a in args.items()]))
 
-    keys = keyfromargs(*toolchains, **args)
-    try:
-        t = registry[keys]  # Cached
-    except KeyError:
-        pass
-    else:
+    toolchain_arg = args.pop('toolchain',None)
+    key = keytuple(toolchain_arg if toolchain_arg else keys)
+    if verbose:
+        print 'toolchain: key={}'.format(key)
+
+    toolchain = registry.get(key,None)
+    if toolchain:  # Found cached
         if verbose:
-            print 'toolchain: Found `{:s}`\n'.format(t), t.log(2)
-        return t
+            print 'toolchain: Found `{}`'.format(toolchain.key)
+        return toolchain
 
-    # Combine
-    id = []
-    prefix = ''
-    env = {}
+    try:
+        toolchain = registry[key[:1]]
+    except KeyError as e:
+        raise NotFoundError(e.args[0])
 
-    for k in keys:
-        try:
-            t = registry[(k,)]  # Single
-        except KeyError:
-            raise NotFoundError((k,))
-
-        id += t._id  # Append
-        prefix = prefix if prefix else t._prefix  # Replace if None
-
-        # Union
-        for k, b in t._env.items():
-            a = env.get(k, [])
-            if isinstance(b,dict):
-                if not a:
-                    a = {}
-                a.update(b)
-            else:
-                a = {a} if isinstance(a,str) else set(a)
-                b = {b} if isinstance(b,str) else set(b)
-                a = list(a|b)
-
-            env[k] = a
-
-    t = Toolchain(id,prefix=prefix,env=env)
+    toolchain = Toolchain(key,
+        env=Toolchain.merge(toolchain.env, *(toolchain.Option(n).env for n in key[1:])))
     if verbose:
-        print 'toolchain: Registered `{:s}`\n'.format(t), t.log(2)
+        print 'toolchain: Registered {}'.format(key)
+        print 'toolchain: env={}'.format(toolchain.env)
+    return toolchain
 
-    return t
+
+def keytuple(*keys):
+    '''Get a flat and duplication-free key tuple
+
+      keys    Strings or (possibly nested) iterables of strings
+      return  A tuple of strings, duplication removed.
+      raise   WrongKeyError If any of elements are in wrong format.
+    '''
+    t = []
+    s = set()
+    for key in keys:
+        key = key.split('+') if isinstance(key,str) else keytuple(*key)
+        for k in key:
+            if k and not k in s:
+                t.append(k)
+                s.add(k)
+
+    return tuple(t)
 
 
-class Toolchain:
-    '''Define a toolchain'''
+class Env:
+    '''Define a set of environment variables'''
 
-    def __init__(self, id, prefix='', env={}, **envargs):
+    def __init__(self, key, env={}, **envargs):
         '''
-          id        A single string or an iterable. For details, see toolchain().
-          prefix    A string.
+          key       A single string or an iterable.
           env       Dictionary of environment variables.
+          envargs   Environment vairables in keyword arguments
 
-          raise   WrongKeyError If any of id is in wrong format.
-                  DupKeyError   If id exists found.
+          raise     WrongKeyError   If key is in wrong format.
+                    DupKeyError     If key exists found.
         '''
-
-        self._id = keyfromargs(toolchain=id)
-        self._prefix = prefix
-        self._env = env.copy()
-        self._env.update(envargs)
+        self.key = keytuple(key)
+        self.env = env.copy()
+        self.env.update(envargs)
 
         try:
-            registry[self._id]
+            registry[self.key]
         except KeyError:
-            registry[self._id] = self
+            registry[self.key] = self
         else:
-            raise DupKeyError(self._id)
+            raise DupKeyError(self.key)
 
     def __str__(self):
-        '''String form of id list, combined with '+'.
+        return '+'.join(self.key)
+
+    @staticmethod
+    def merge(*envs):
+        '''Merge environment variable sets and return
+
+        Values of variables are either dicts or iterables.
+        '''
+
+        env = {}
+        for e in envs:
+            for k,b in e.items():
+                if isinstance(b,dict):
+                    a = env.get(k,{})
+                    a.update(b)
+                    env[k] = a
+                else:
+                    a = env.get(k,set())
+                    a = {a} if isinstance(a,str) else set(a)
+                    b = {b} if isinstance(b,str) else set(b)
+                    env[k] = list(a|b)
+
+        return env
+
+
+class Toolchain(Env):
+    '''Define and register a toolchain'''
+
+    def __init__(self, key, option={}, env={}, **envargs):
+        '''
+          key       A single string or an iterable.
+          option    Dictionary of available options, whose keys are names,
+                    and values are either Option keys or instances.
+          env       Dictionary of environment variables.
+          envargs   Environment vairables in keyword arguments.
+
+          raise     WrongKeyError   If key is in wrong format.
+                    DupKeyError     If key exists found.
+        '''
+        Env.__init__(self, key, env, **envargs)
+        self.option = option.copy()
+
+    def Join(self, *names, **args):
+        '''
+        Find options with names and join them to self.
         
-          e.g. 'x64_linux_gcc+gcc_debug'
+          option=<names>    Option names or instances to add. See toolchain().
+          *<names>          Either option=<names> or *<names> may be used.
+
+          verbose=<bool>    If True, print progress information.
         '''
-        return '+'.join(self._id)
+        verbose = args.pop('verbose', False)
 
-    def log(self, indent=0):
-        '''Return log string'''
-        return '{i}id={id}\n{i}prefix=\'{prefix}\'\n{i}env={env}'.format(
-            i=' '*indent,
-            id='+'.join(self._id), prefix=self._prefix, env=self._env)
+        option = args.get('option',[])
+        return toolchain(self.key, option if option else names, verbose=verbose)
 
-    @property
-    def id(self):
-        '''Immutable iterable of ids
+    def Option(self, name):
+        try:
+            o = self.option[name]
+        except KeyError:
+            raise Exception('`{}` Not supports [{}]'.format(self,name))
 
-        e.g. ('x64_linux_gcc','gcc_debug')
-        '''
-        return self._id
+        if isinstance(o,Option):
+            return o
 
-    # @property
-    # def prefix(self):
-    #     '''Binary prefix'''
-    #     return str(self._prefix)
+        try:
+            o = registry[(o,)]
+        except KeyError:
+            raise NotFoundError(o)
 
-    def env(self):
+        self.option[name] = o
+        return o
+
+    def Environment(self):
         '''Create an Environment with environment values defined.
-
-        Values of variable ['CC', 'CXX', 'LINK'] are prefixed with `.prefix`.
         '''
-        return Environment(
-            ENV=osenv,
-            **{k:self._prefixed(k,v) for k,v in self._env.items()})
+        return Environment(ENV=osenv,**self.env)
 
-    def _prefixed(self, key, val):
-        if key in ('CC', 'CXX', 'LINK'):
-            v = val if isinstance(val,str) else '-'.join(val) 
-            return str(self._prefix) + v if v else ''
-        else:
-            return val
+
+class Option(Env):
+    '''Define and register a toolchain'''

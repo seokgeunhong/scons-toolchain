@@ -1,16 +1,17 @@
-# SConsToolchain 0.1.0.dev-1
+# SConsToolchain 0.1.0.dev-3
 
 **Under developement and not for distribution**
 
 Toolchain definitions for SCons.
+
 Tested on SCons 3.x.
 
 Features:
 ---
 
   - Define toolchains, which defines tools and arguments to build.
-  - Select toolchains at runtime via SCons arguments
-  - Combine toolchains at runtime via SCons arguments
+  - Define options, which defines additional arguments to build.
+  - Select toolchains and options at runtime via SCons arguments
 
 Usage
 ---
@@ -19,27 +20,23 @@ First, include code below into you `SConstruct` file.
 
 ```python
 # Toolchain registry
-import toolchains
+from toolchain import toolchains
 
-# Supported toolchains
-import x64_linux_gcc
-import x64_windows_mingw_gcc
-import gcc_options
+# Predefined toolchains
+import toolchain.x64_linux_gcc
+import toolchain.x64_windows_msys_gcc
 
 # Find a toolchain with SCons arguments
 try:
-    toolchain = toolchains.find(**ARGUMENTS)
-    print('Found a toolchain.\n  ' + '\n  '.join(toolchain.log()))
-
+    toolchain = toolchains.toolchain(**ARGUMENTS)
 except Exception as e:
-    print('Error finding a toolchain: '+e.args[0])
     exit(1)
 ```
 
 Second, define `Environment` with toolchain, and use it when build.
 
 ```python
-env = Environment(ENV=os.environ, **toolchain.env())
+env = toolchain.Environment()
 
 env.Library(..)
 env.Program(..)
@@ -47,95 +44,105 @@ env.Program(..)
 
 Finally, build with a _toolchain_ argument:
 
-scons `toolchain=`_id_[+_id_[+..]] _target_
+```bash
+scons toolchain=<toolchain>[+<option>[+..]] <target>
+```
 
-All the toolchains specified are combined as ordered,
-and proper toolchain is selected, or fail.
+All options following are combined as ordered,
+and proper toolchain is selected, or fail if none found.
 
 ```bash
-# Select gcc 8 for 64 bit linux, add gcc debug options and gcc warnings.
-scons toolchain=x64-linux-gcc-8+gcc-debug+gcc-warnings <target>
+# gcc 8 for 64 bit linux, with debug option.
+scons toolchain=x64-linux-gcc-8+debug <target>
 ```
 
 Predefined toolchains:
 ---
 
-### In `x64_linux_gcc`:
+### _gcc_ family
 
-- `x64-linux-gcc`: Current version of gcc installed, for 64bit linux
-- `x64-linux-gcc-7`: gcc 7.x, for 64bit linux.
-- `x64-linux-gcc-8`: gcc 8.x, for 64bit linux.
-
-### In `x64_windows_mingw_gcc`:
-
-- `x64-windows-mingw-gcc`: mingw-gcc, for 64bit windows.
-
-### In `x64_windows_msys_gcc`:
-
-- `x64-windows-msys-gcc`: msys-gcc, for 64bit windows.
-
-Predefined toolchain options:
----
-
-### In `gcc_options`:
-
-- `gcc-debug`: Add `-g` option.
-- `gcc-warnings` Add bunch of warning options for _gcc_.
-
-Defining a toolchain
----
-
-Define a python2 module and write a Toolchain() per toolchain.
-
-### _class_ `Toolchain`(`id`, `prefix`=_''_, `env`=_{}_)
-
-#### `id`
-
-`id` is a string or an iterable.
-
-A string is a single id or multiple ids separated with `+`.
+- _x64_linux_gcc.Toolchain(_`'x64-linux-gcc'`_)_: Current version of _gcc_ installed, for 64bit _Linux_
+- _x64_linux_gcc.Toolchain(_`'x64-linux-gcc-7'`_)_: _gcc_ 7.x, for 64bit _Linux_.
+- _x64_linux_gcc.Toolchain(_`'x64-linux-gcc-8'`_)_: _gcc_ 8.x, for 64bit _Linux_.
+- _x64_windows_mingw_gcc.Toolchain(_`'x64-windows-mingw-gcc'`_)_: _mingw-gcc_, for 64bit _Windows_.
+- _x64_windows_msys_gcc.Toolchain(_`'x64-windows-msys-gcc`_)_: _msys-gcc_, for 64bit _Windows_.
 
 ```python
-Toolchain(id='x64-linux-gcc', ..)  # Key is ('x64-linux-gcc',)
-Toolchain('x64-linux-gcc+gcc-debug', ..)  # Key is ('x64-linux-gcc','gcc-debug')
+env = toolchains.toolchain('x64-windows-mingw-gcc').Environment()
+env.Program(...)
 ```
 
-`id` may be an iterable, which yields another `id`s.
+### _gcc_ options
+
+- _gcc_options.Option(_`'gcc-debug'`_)_: Enabled by `'+debug'`. Adds `-g` option to compilers.
+- _gcc_options.Option(_`'gcc-warning'`_)_: Enabled by `'+warnings'`. Adds bunch of warning options for _gcc_.
 
 ```python
-Toolchain(['x64-linux-gcc','gcc-debug','gcc-warnings'], ..)
-Toolchain(['x64-linux-gcc',['gcc-debug','gcc-warnings']], ..)
-Toolchain(id=['x64-linux-gcc','gcc-debug+gcc-warnings'], ..)
-# All three yield the same key: ('x64-linux-gcc','gcc-debug','gcc-warnings')
+env = toolchains.toolchain('x64-linux-gcc+debug+warnings').Environment()
+env.Program(...)
 ```
 
-Each string is split with '+' into strings, nested iterables are flatten,
-and all iterables are combined into a single tuple, or a _key_.
+### _re2c_ lexer
 
-#### `prefix`
+- _re2c.Toolchain(_`'re2c'`_)_: _re2c_ lexer. Reads `*.re` files and generate `*.c` codes. See <https://re2c.org/> for details.
 
-String prefixed to tool binaries.
-Currently environment values of `CC`, `CXX`, and `LINK` are prefixed.
+Use `Source()` builder.
 
 ```python
-# Compiler `x86_64-linux-gnu-gcc`, and linker `x86_64-linux-gnu-g++` is used.
-Toolchain(.., prefix='x86_64-linux-gnu-', env={'CC':'gcc', 'LINK':'g++'})
+env = toolchains.toolchain('re2c').Environment()
+env.Source(source='lex.re')
 ```
 
-When toolchains are combined, latter `prefix` overrides prior `prefix` if
-not `None` or empty.
+## _def_ `toolchain`(*_keys_, toolchain=_keys_)
 
-#### `env`
+Find and return a `Toolchain` instance with _keys_. Either `toolchain`(_toolchain_=_keys_) or `toolchain`(*_keys_) may be used.
 
-Dictionary of environment vairables.
-Keys are strings, and values are single string, or list of strings.
+### _keys_
 
-When toolchains are combined, environment variables of same name are merged
-supressing duplicated values. Also, order of values are ignored.
+Strings, which are single keys or multiple keys partitioned with `+`, or iterables which contain strings, or another iterables of strings. See `Toolchain.Join`() for details.
 
 ```python
-Toolchain('gcc-debug', env={'CC':['-g','-W']})
-Toolchain('gcc-warnings', env={'CC':['-W','-pedantic']})
-
-find('x64-linux-gcc+gcc-debug')  # results env={'CC':['-W','-g','-pedantic']}
+toolchain(toolchain='gcc+debug+warning')
+toolchain(['gcc','debug','warning'], ..)
+toolchain(['gcc',['debug','warning']], ..)
+toolchain(toolchain=['gcc','debug+warning'], ..)
+# Equals toolchain('gcc').Join('debug','warning')
 ```
+
+## _class_ `Toolchain`(key, options=_{}_, env=_{}_, **_envargs_)
+
+Define and register a toolchain.
+
+### _key_
+
+_key_ is a string not containing `+`.
+
+### _options_
+
+A dictionary whose each key is option name and value is option _key_ or _Option_ instance. Options not specified here is not allowed to join.
+
+```python
+Toolchain('gcc',options={'debug':'gcc-debug'})
+```
+
+### _env_, **_envargs_
+
+_env_ is a dictionary, merged with _envargs_ keyword arguments, which defines environment variables used to create _SCons.Environment_.
+
+## _def_ _Toolchain_.`Join`(_self_, *_names_, option=_names_):
+
+Find options with _names_ and join them to _self_. Either `Join`(option=_names_) or `Join`(*_names_) may be used.
+
+_names_ are strings, which are single or multiple names partitioned with `+`, or iterables which contain strings, or another iterables of strings.
+
+When you join options to a toolchain;
+
+- A new toolchain with concatenated _keys_ are created and registered.
+- Environment variables are merged:
+  - Strings are considered as lists of one element.
+  - Lists are merged, while duplicated values are suppressed, with order not preserved.
+  - Dictionaries are merged, by overriding duplicated keys. See `dict.update()` reference.
+
+## _class_ `Option`(_key_, _env_=_{}_, **_envargs_)
+
+See `Toolchain` for construction.
