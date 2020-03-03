@@ -4,7 +4,7 @@ from toolchains import Option
 
 # Enable debug option
 Option('gcc-debug',
-    CCFLAGS='-g',
+    CCFLAGS=['-g','-D_DEBUG=1']
 )
 
 # Turn on warnings
