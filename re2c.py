@@ -6,7 +6,7 @@ from toolchains import Toolchain
 Toolchain(
     're2c',
     BUILDERS={
-        'Source':Builder(action='re2c $SOURCE -o $TARGET',
+        'Source':Builder(action='re2c -W $SOURCE -o $TARGET',
                          suffix='.c',
                          src_suffix='.re')
     }
