@@ -6,7 +6,7 @@ version = {
     'minor' : 1,
     'patch' : 0,
     'state' : 'a',
-    'rev' : 4,
+    'rev' : 5,
 }
 
 package = {

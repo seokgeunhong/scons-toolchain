@@ -1,5 +1,5 @@
 # x86_64, linux, gcc
-from toolchains import Toolchain
+from .toolchains import Toolchain
 
 
 Toolchain('x64-linux-gcc',

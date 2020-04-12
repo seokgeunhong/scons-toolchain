@@ -63,19 +63,19 @@ def toolchain(*keys, **args):
     verbose = args.pop('verbose', False)
 
     if verbose:
-        print 'toolchain: Finding ({}{})'.format(
+        print('toolchain: Finding ({}{})'.format(
             ','.join((str(t) for t in keys)),
-            ','.join(['='.join(a) for a in args.items()]))
+            ','.join(['='.join(a) for a in args.items()])))
 
     toolchain_arg = args.pop('toolchain',None)
     key = keytuple(toolchain_arg if toolchain_arg else keys)
     if verbose:
-        print 'toolchain: key={}'.format(key)
+        print('toolchain: key={}'.format(key))
 
     toolchain = registry.get(key,None)
     if toolchain:  # Found cached
         if verbose:
-            print 'toolchain: Found `{}`'.format(toolchain.key)
+            print('toolchain: Found `{}`'.format(toolchain.key))
         return toolchain
 
     try:
@@ -86,8 +86,8 @@ def toolchain(*keys, **args):
     toolchain = Toolchain(key,
         env=Toolchain.merge(toolchain.env, *(toolchain.Option(n).env for n in key[1:])))
     if verbose:
-        print 'toolchain: Registered {}'.format(key)
-        print 'toolchain: env={}'.format(toolchain.env)
+        print('toolchain: Registered {}'.format(key))
+        print('toolchain: env={}'.format(toolchain.env))
     return toolchain
 
 

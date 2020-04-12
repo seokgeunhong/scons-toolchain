@@ -1,5 +1,5 @@
 # gcc options
-from toolchains import Option
+from .toolchains import Option
 
 
 # Enable debug option

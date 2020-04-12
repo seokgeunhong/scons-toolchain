@@ -1,6 +1,6 @@
 # re2c
 from SCons.Script import Builder
-from toolchains import Toolchain
+from .toolchains import Toolchain
 
 
 Toolchain(

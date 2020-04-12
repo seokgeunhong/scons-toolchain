@@ -1,10 +1,10 @@
-# SConsToolchain 0.1.0.dev-3
+# SConsToolchain 0.1.0a5
 
 **Under developement and not for distribution**
 
 Toolchain definitions for SCons.
 
-Tested on SCons 3.x.
+Tested on SCons 3.1.x.
 
 Features:
 ---
